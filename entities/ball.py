@@ -17,6 +17,8 @@ class Ball:
         self.canvas.coords(self.id, self.x - self.radius, self.y - self.radius, self.x + self.radius, self.y + self.radius)
         if self.x - self.radius <= 0 or self.x + self.radius >= CANVAS_WIDTH:
             self.speed_x *= -1
+        if self.y - self.radius <= 0:
+            self.speed_y *= -1
 
     def get_rect(self):
         return (self.x - self.radius, self.y - self.radius, self.x + self.radius, self.y + self.radius)
