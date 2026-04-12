@@ -1,22 +1,42 @@
-class Brick:
-    def __init__(self):
-        #So we need a type, could use ENUM to define them and use integers as values for every type
-        #We need to know it's size, placement on screen and color
-        #For multihit we need to know how much dmg it has taken and track it to change color
-        #Fixed at creating is it's size and placement on screen and type
-        #Changes at runtime are dmg taken and color for multihit only
-        #Drawing done in __init__ because it's a one time thing for every brick object then just update state
-        pass
+from utils.constants import BRICK_HEIGHT, BRICK_WIDTH
+from utils.enums import BrickType
 
-    def damage_tracking(self):
-        #Use this to track damage taken and if it's multihit we change color to represent it, if not then we remove from screen
-        pass
+class Brick:
+    def __init__(self, canvas, type, position):
+        self.canvas = canvas
+        self.type = type
+        self.position = position
+        color_map = {
+            BrickType.NORMAL: "steelblue",
+            BrickType.EXPLODING: "darkorange",
+            BrickType.INDESTRUCTIBLE: "grey",
+            BrickType.MULTIHIT: "red"
+        }
+        self.color = color_map[self.type]
+        self.hits_taken = 0
+        self.crack_lines = []
+        self.id = self.canvas.create_rectangle(self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT, fill=self.color)
 
     def update_state(self):
-        #Call this from damage_tracking, maybe should create three different functions to split the three types then call each one depending
-        #on what type it is
-        pass
+        match self.type:
+            case BrickType.MULTIHIT:
+                if self.hits_taken == 0:
+                    self.hits_taken += 1
+                    #Here draw the diagonal line
+                elif self.hits_taken == 1:
+                    self.hits_taken += 1
+                    #draw the second line
+                elif self.hits_taken == 2:
+                    self.remove_when_destroyed()
+                else:
+                    raise Exception("The BRICK can't take this many hits")
+            case BrickType.NORMAL:
+                self.remove_when_destroyed()
+            case BrickType.INDESTRUCTIBLE:
+                #Should do nothing except collision detection which isnt here but in ball
+                pass
+            case BrickType.EXPLODING:
+                self.remove_when_destroyed()
 
-    def ball_hit(self):
-        #Use this for collision detection, or maybe it should be in ball?
-        pass
+    def remove_when_destroyed(self):
+        self.canvas.delete(self.id)
