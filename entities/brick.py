@@ -33,7 +33,6 @@ class Brick:
             case BrickType.NORMAL:
                 self.remove_when_destroyed()
             case BrickType.INDESTRUCTIBLE:
-                # Skips, collision detection is in BALL
                 pass
             case BrickType.EXPLODING:
                 self.remove_when_destroyed()
