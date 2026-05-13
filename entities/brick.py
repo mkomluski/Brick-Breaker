@@ -22,10 +22,10 @@ class Brick:
             case BrickType.MULTIHIT:
                 if self.hits_taken == 0:
                     self.hits_taken += 1
-                    #Here draw the diagonal line
+                    self.crack_lines.append(self.canvas.create_line(self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT, fill="black", width=2))
                 elif self.hits_taken == 1:
                     self.hits_taken += 1
-                    #draw the second line
+                    self.crack_lines.append(self.canvas.create_line(self.position.x + BRICK_WIDTH, self.position.y, self.position.x, self.position.y + BRICK_HEIGHT, fill="black", width=2))
                 elif self.hits_taken == 2:
                     self.remove_when_destroyed()
                 else:
@@ -33,10 +33,13 @@ class Brick:
             case BrickType.NORMAL:
                 self.remove_when_destroyed()
             case BrickType.INDESTRUCTIBLE:
-                #Should do nothing except collision detection which isnt here but in ball
+                # Skips, collision detection is in BALL
                 pass
             case BrickType.EXPLODING:
                 self.remove_when_destroyed()
 
     def remove_when_destroyed(self):
+        if(BrickType.MULTIHIT == self.type):
+            for line in self.crack_lines:
+                self.canvas.delete(line)
         self.canvas.delete(self.id)
