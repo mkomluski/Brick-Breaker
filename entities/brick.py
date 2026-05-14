@@ -28,17 +28,23 @@ class Brick:
                     self.crack_lines.append(self.canvas.create_line(self.position.x + BRICK_WIDTH, self.position.y, self.position.x, self.position.y + BRICK_HEIGHT, fill="black", width=2))
                 elif self.hits_taken == 2:
                     self.remove_when_destroyed()
+                    return True
                 else:
                     raise Exception("The BRICK can't take this many hits")
             case BrickType.NORMAL:
                 self.remove_when_destroyed()
+                return True
             case BrickType.INDESTRUCTIBLE:
                 pass
             case BrickType.EXPLODING:
                 self.remove_when_destroyed()
+                return True
 
     def remove_when_destroyed(self):
         if(BrickType.MULTIHIT == self.type):
             for line in self.crack_lines:
                 self.canvas.delete(line)
         self.canvas.delete(self.id)
+
+    def get_rect(self):
+        return (self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT)
