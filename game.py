@@ -8,6 +8,7 @@ from levels.level_manager import LevelManager
 from utils.constants import *
 from levels.level_data import level
 from collections import namedtuple
+from utils.enums import BrickState
 
 Point= namedtuple("Point", ["x", "y"])
 
@@ -69,7 +70,7 @@ class Game:
                     self.ball.set_speed(self.ball.speed_x, -self.ball.speed_y)
 
                 res = brick.update_state()
-                if res:
+                if res == BrickState.DESTROYED:
                     self.bricks.remove(brick)
                 break
 

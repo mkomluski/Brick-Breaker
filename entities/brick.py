@@ -1,5 +1,5 @@
 from utils.constants import BRICK_HEIGHT, BRICK_WIDTH
-from utils.enums import BrickType
+from utils.enums import BrickType, BrickState
 
 class Brick:
     def __init__(self, canvas, type, position):
@@ -23,22 +23,24 @@ class Brick:
                 if self.hits_taken == 0:
                     self.hits_taken += 1
                     self.crack_lines.append(self.canvas.create_line(self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT, fill="black", width=2))
+                    return BrickState.ALIVE
                 elif self.hits_taken == 1:
                     self.hits_taken += 1
                     self.crack_lines.append(self.canvas.create_line(self.position.x + BRICK_WIDTH, self.position.y, self.position.x, self.position.y + BRICK_HEIGHT, fill="black", width=2))
+                    return BrickState.ALIVE
                 elif self.hits_taken == 2:
                     self.remove_when_destroyed()
-                    return True
+                    return BrickState.DESTROYED
                 else:
                     raise Exception("The BRICK can't take this many hits")
             case BrickType.NORMAL:
                 self.remove_when_destroyed()
-                return True
+                return BrickState.DESTROYED
             case BrickType.INDESTRUCTIBLE:
-                pass
+                return BrickState.ALIVE
             case BrickType.EXPLODING:
                 self.remove_when_destroyed()
-                return True
+                return BrickState.DESTROYED
 
     def remove_when_destroyed(self):
         if(BrickType.MULTIHIT == self.type):
