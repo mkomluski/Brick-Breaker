@@ -7,8 +7,8 @@ from entities.brick import Brick
 from levels.level_manager import LevelManager
 from utils.constants import *
 from levels.level_data import level
-from collections import namedtuple
-from utils.enums import BrickState
+from collections import namedtuple, deque
+from utils.enums import BrickState, BrickType
 
 Point= namedtuple("Point", ["x", "y"])
 
@@ -72,6 +72,8 @@ class Game:
                 res = brick.update_state()
                 if res == BrickState.DESTROYED:
                     self.bricks.remove(brick)
+                    if brick.type == BrickType.EXPLODING:
+                        self.handle_explosion(brick)
                 break
 
         if not any_collision:
@@ -92,3 +94,25 @@ class Game:
                 if type != None:
                     position = Point(col_index * (BRICK_WIDTH+BRICK_GAP), row_index * (BRICK_HEIGHT+BRICK_GAP))
                     self.bricks.append(Brick(self.canvas, type, position))
+
+    def handle_explosion(self, brick):
+        dq = deque()
+        dq.append(brick)
+        destroyed = set()
+        while dq:
+            current = dq.pop()
+            for adj in self.bricks:
+                if (
+                    (abs(current.position.x - adj.position.x) == BRICK_WIDTH + BRICK_GAP and abs(current.position.y - adj.position.y) == 0) or
+                    (abs(current.position.x - adj.position.x) == 0 and abs(current.position.y - adj.position.y) == BRICK_HEIGHT + BRICK_GAP) or
+                    (abs(current.position.x - adj.position.x) == BRICK_WIDTH + BRICK_GAP and abs(current.position.y - adj.position.y) == BRICK_HEIGHT + BRICK_GAP)):
+                    if adj not in destroyed:
+                        if adj.type == BrickType.EXPLODING:
+                            dq.append(adj)
+
+                        res = adj.update_state()
+                        if res == BrickState.DESTROYED:
+                            destroyed.add(adj)
+        
+        for b in destroyed:
+            self.bricks.remove(b)
