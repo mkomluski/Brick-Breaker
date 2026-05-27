@@ -6,7 +6,6 @@ from entities.paddle import Paddle
 from entities.brick import Brick
 from levels.level_manager import LevelManager
 from utils.constants import *
-from levels.level_data import level
 from collections import namedtuple, deque
 from utils.enums import BrickState, BrickType
 
@@ -22,7 +21,7 @@ class Game:
         self.ball = Ball(self.canvas, CANVAS_WIDTH//2)
         self.highscore = 0 #0 is a place holder for now, it should read the first line in the highscore.txt
         self.current_score = 0
-        self.level_manager = LevelManager([level])
+        self.level_manager = LevelManager()
         self.bricks = []
         self.load_levels()
 
