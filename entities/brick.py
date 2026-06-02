@@ -41,12 +41,13 @@ class Brick:
             case BrickType.EXPLODING:
                 self.remove_when_destroyed()
                 return BrickState.DESTROYED
+        return None
 
     def remove_when_destroyed(self):
-        if(BrickType.MULTIHIT == self.type):
+        if BrickType.MULTIHIT == self.type:
             for line in self.crack_lines:
                 self.canvas.delete(line)
         self.canvas.delete(self.id)
 
     def get_rect(self):
-        return (self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT)
+        return self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT

@@ -22,7 +22,7 @@ class Ball:
             self.speed_y *= -1
 
     def get_rect(self):
-        return (self.x - self.radius, self.y - self.radius, self.x + self.radius, self.y + self.radius)
+        return self.x - self.radius, self.y - self.radius, self.x + self.radius, self.y + self.radius
 
     def set_speed(self, speed_x, speed_y):
         self.speed_x = speed_x

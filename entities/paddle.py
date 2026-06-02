@@ -15,4 +15,4 @@ class Paddle:
         self.canvas.coords(self.id, self.x, self.y, self.x + self.width, self.y + self.height)
 
     def get_rect(self):
-        return (self.x, self.y, self.x + self.width, self.y + self.height)
+        return self.x, self.y, self.x + self.width, self.y + self.height
