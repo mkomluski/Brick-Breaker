@@ -1,10 +1,11 @@
 from utils.constants import BRICK_HEIGHT, BRICK_WIDTH
 from utils.enums import BrickType, BrickState
 
+
 class Brick:
-    def __init__(self, canvas, type, position):
+    def __init__(self, canvas, brick_type, position):
         self.canvas = canvas
-        self.type = type
+        self.type = brick_type
         self.position = position
         color_map = {
             BrickType.NORMAL: "steelblue",
@@ -15,18 +16,23 @@ class Brick:
         self.color = color_map[self.type]
         self.hits_taken = 0
         self.crack_lines = []
-        self.id = self.canvas.create_rectangle(self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT, fill=self.color)
+        self.id = self.canvas.create_rectangle(self.position.x, self.position.y, self.position.x + BRICK_WIDTH,
+                                               self.position.y + BRICK_HEIGHT, fill=self.color)
 
     def update_state(self):
         match self.type:
             case BrickType.MULTIHIT:
                 if self.hits_taken == 0:
                     self.hits_taken += 1
-                    self.crack_lines.append(self.canvas.create_line(self.position.x, self.position.y, self.position.x + BRICK_WIDTH, self.position.y + BRICK_HEIGHT, fill="black", width=2))
+                    self.crack_lines.append(
+                        self.canvas.create_line(self.position.x, self.position.y, self.position.x + BRICK_WIDTH,
+                                                self.position.y + BRICK_HEIGHT, fill="black", width=2))
                     return BrickState.ALIVE
                 elif self.hits_taken == 1:
                     self.hits_taken += 1
-                    self.crack_lines.append(self.canvas.create_line(self.position.x + BRICK_WIDTH, self.position.y, self.position.x, self.position.y + BRICK_HEIGHT, fill="black", width=2))
+                    self.crack_lines.append(
+                        self.canvas.create_line(self.position.x + BRICK_WIDTH, self.position.y, self.position.x,
+                                                self.position.y + BRICK_HEIGHT, fill="black", width=2))
                     return BrickState.ALIVE
                 elif self.hits_taken == 2:
                     self.remove_when_destroyed()
