@@ -49,7 +49,20 @@ class Game:
 
             # Collision with paddle
             if self.check_collisions(self.ball.get_rect(), self.paddle.get_rect()) and self.ball.speed_y > 0:
-                self.ball.set_speed(self.ball.speed_x, -self.ball.speed_y)
+                ball_rect = self.ball.get_rect()
+                paddle_rect = self.paddle.get_rect()
+
+                ball_center_x = (ball_rect[0] + ball_rect[2]) / 2
+                paddle_center_x = (paddle_rect[0] + paddle_rect[2]) / 2
+                paddle_half_width = (paddle_rect[2] - paddle_rect[0]) / 2
+
+                offset = max(-1, min(1, (ball_center_x - paddle_center_x) / paddle_half_width))
+
+                speed = (self.ball.speed_x ** 2 + self.ball.speed_y ** 2) ** 0.5
+                new_speed_x = offset * speed
+                new_speed_y = -(speed ** 2 - new_speed_x ** 2) ** 0.5
+
+                self.ball.set_speed(new_speed_x, new_speed_y)
 
             # Collision with bricks
             any_collision = False
