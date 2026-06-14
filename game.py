@@ -1,6 +1,5 @@
 import tkinter
 import os
-import json
 
 from collections import namedtuple, deque
 from tkinter import Tk
@@ -28,7 +27,7 @@ class Game:
         self.bricks = []
         self.game_state = GameState.START
         self.start_screen_items = []
-        self.continuing = os.path.exists("data/save.json")
+        self.continuing = os.path.exists("data/save.txt")
         self.transition_screen_items = []
 
     def run(self):
@@ -119,7 +118,11 @@ class Game:
     def on_play_click(self, event):
         for item in self.start_screen_items:
             self.canvas.delete(item)
-        self.gameplay_start()
+        
+        if self.continuing:
+            self.load_save()
+        else:
+            self.gameplay_start()
 
     def on_highscore_click(self, event):
         pass
@@ -163,15 +166,23 @@ class Game:
         self.next_level()
 
     def on_save_exit_click(self, event):
-        data = []
-        with open("data/save.json", "w") as f:
-            json.dump(data, f)
+        with open("data/save.txt", "w") as f:
+            f.write(str(self.level_manager.current_level))
+
         self.tk.quit()
 
     def next_level(self):
         self.game_state = GameState.PLAYING
         self.ball.reset()
         self.load_levels()
+
+    def load_save(self):
+        with open("data/save.txt", "r") as f:
+            self.level_manager.current_level = int(f.read())
+        
+        os.remove("data/save.txt")
+
+        self.gameplay_start()
 
     def check_collisions(self, rect1, rect2):
         return not (rect1[2] < rect2[0] or rect1[0] > rect2[2] or rect1[3] < rect2[1] or rect1[1] > rect2[3])
