@@ -56,7 +56,7 @@ class Game:
                 paddle_center_x = (paddle_rect[0] + paddle_rect[2]) / 2
                 paddle_half_width = (paddle_rect[2] - paddle_rect[0]) / 2
 
-                offset = max(-1, min(1, (ball_center_x - paddle_center_x) / paddle_half_width))
+                offset = max(-0.6, min(0.6, (ball_center_x - paddle_center_x) / paddle_half_width))
 
                 speed = (self.ball.speed_x ** 2 + self.ball.speed_y ** 2) ** 0.5
                 new_speed_x = offset * speed
