@@ -1,4 +1,7 @@
 import tkinter
+import os
+import json
+
 from collections import namedtuple, deque
 from tkinter import Tk
 
@@ -25,6 +28,8 @@ class Game:
         self.bricks = []
         self.game_state = GameState.START
         self.start_screen_items = []
+        self.continuing = os.path.exists("data/save.json")
+        self.transition_screen_items = []
 
     def run(self):
         self.start_screen()
@@ -38,9 +43,7 @@ class Game:
         pass
 
     def game_loop(self):
-        if self.game_state == GameState.START:
-            pass
-        elif self.game_state == GameState.TRANSITION:
+        if self.game_state == GameState.TRANSITION:
             pass
         elif self.game_state == GameState.PLAYING:
             self.ball.move()
@@ -85,6 +88,10 @@ class Game:
             if not any_collision:
                 self.ball.in_collision = False
 
+            if not any(brick.type != BrickType.INDESTRUCTIBLE for brick in self.bricks):
+                self.game_state = GameState.TRANSITION
+                self.transition_screen()
+
         elif self.game_state == GameState.GAME_OVER:
             pass
 
@@ -93,9 +100,11 @@ class Game:
     def start_screen(self):
         title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text="Brick Breaker", font=("Arial", 42, "bold"),
                                         fill="WHITE")
-        play_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Play", font=("Arial", 20), fill="WHITE")
-        highscore_text = self.canvas.create_text(CANVAS_WIDTH // 2, 360, text="High Score",
-                                                 font=("Arial", 20), fill="WHITE")
+        if not self.continuing:
+            play_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Play", font=("Arial", 20), fill="WHITE")
+        else:
+            play_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Continue Playing", font=("Arial", 20), fill="WHITE")
+        highscore_text = self.canvas.create_text(CANVAS_WIDTH // 2, 360, text="High Score", font=("Arial", 20), fill="WHITE")
         exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Exit", font=("Arial", 20), fill="WHITE")
 
         self.canvas.tag_bind(play_text, "<Button-1>", self.on_play_click)
@@ -126,6 +135,42 @@ class Game:
         self.paddle = Paddle(self.canvas, CANVAS_WIDTH // 2)
         self.ball = Ball(self.canvas, CANVAS_WIDTH // 2)
 
+        self.load_levels()
+
+    def transition_screen(self):
+        displayed = f"Level {self.level_manager.current_level} completed!"
+        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text=displayed, font=("Arial", 42, "bold"),
+                                        fill="WHITE")
+        continue_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Next Level", font=("Arial", 20), fill="WHITE")
+        save_exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Save and Exit", font=("Arial", 20), fill="WHITE")
+
+        self.canvas.tag_bind(continue_text, "<Button-1>", self.on_next_click)
+        self.canvas.tag_bind(save_exit_text, "<Button-1>", self.on_save_exit_click)
+
+        self.transition_screen_items.append(title)
+        self.transition_screen_items.append(continue_text)
+        self.transition_screen_items.append(save_exit_text)
+
+    def on_next_click(self, event):
+        for item in self.bricks:
+            self.canvas.delete(item.id)
+        self.bricks.clear()
+
+        for item in self.transition_screen_items:
+            self.canvas.delete(item)
+        self.transition_screen_items.clear()
+
+        self.next_level()
+
+    def on_save_exit_click(self, event):
+        data = []
+        with open("data/save.json", "w") as f:
+            json.dump(data, f)
+        self.tk.quit()
+
+    def next_level(self):
+        self.game_state = GameState.PLAYING
+        self.ball.reset()
         self.load_levels()
 
     def check_collisions(self, rect1, rect2):
