@@ -27,8 +27,10 @@ class Game:
         self.bricks = []
         self.game_state = GameState.START
         self.start_screen_items = []
-        self.continuing = os.path.exists("data/save.txt")
         self.transition_screen_items = []
+        self.game_over_screen_items = []
+        self.continuing = os.path.exists("data/save.txt")
+        self.lives = PLAYER_LIVES
 
     def run(self):
         self.start_screen()
@@ -38,13 +40,8 @@ class Game:
     def update_state(self, event):
         self.paddle.move(event.x)
 
-    def ball_out_of_bounds(self):
-        pass
-
     def game_loop(self):
-        if self.game_state == GameState.TRANSITION:
-            pass
-        elif self.game_state == GameState.PLAYING:
+        if self.game_state == GameState.PLAYING:
             self.ball.move()
 
             # Collision with paddle
@@ -99,15 +96,22 @@ class Game:
 
             if not any_collision:
                 self.ball.in_collision = False
-
-            if not any(brick.type != BrickType.INDESTRUCTIBLE for brick in self.bricks):
+            
+            if self.ball.get_rect()[3] > CANVAS_HEIGHT:
+                self.ball_out_of_bounds()
+            elif not any(brick.type != BrickType.INDESTRUCTIBLE for brick in self.bricks):
                 self.game_state = GameState.TRANSITION
                 self.transition_screen()
 
-        elif self.game_state == GameState.GAME_OVER:
-            pass
-
         self.tk.after(20, self.game_loop)
+
+    def ball_out_of_bounds(self):
+        self.lives -= 1
+        if self.lives == 0:
+            self.game_state = GameState.GAME_OVER
+            self.game_over_screen()
+        else:
+            self.ball.reset()
 
     def start_screen(self):
         title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text="Brick Breaker", font=("Arial", 42, "bold"),
@@ -145,6 +149,10 @@ class Game:
 
     def gameplay_start(self):
         self.game_state = GameState.PLAYING
+        if self.paddle:
+            self.canvas.delete(self.paddle.id)
+        if self.ball:
+            self.canvas.delete(self.ball.id)
 
         self.canvas.bind("<Motion>", self.update_state)
 
@@ -195,6 +203,33 @@ class Game:
         
         os.remove("data/save.txt")
 
+        self.gameplay_start()
+
+    def game_over_screen(self):
+        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text="Game Over!", font=("Arial", 42, "bold"),
+                                        fill="WHITE")
+        play_again_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Play Again", font=("Arial", 20), fill="WHITE")
+        exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Exit", font=("Arial", 20), fill="WHITE")
+
+        self.canvas.tag_bind(play_again_text, "<Button-1>", self.on_play_again_click)
+        self.canvas.tag_bind(exit_text, "<Button-1>", self.on_exit_click)
+
+        self.game_over_screen_items.append(title)
+        self.game_over_screen_items.append(play_again_text)
+        self.game_over_screen_items.append(exit_text)
+    
+    def on_play_again_click(self, event):
+        for item in self.bricks:
+            self.canvas.delete(item.id)
+        self.bricks.clear()
+        
+        for item in self.game_over_screen_items:
+            self.canvas.delete(item)
+        self.game_over_screen_items.clear()
+
+        self.lives = PLAYER_LIVES
+        self.level_manager.current_level = 0
+        self.current_score = 0
         self.gameplay_start()
 
     def check_collisions(self, rect1, rect2):
