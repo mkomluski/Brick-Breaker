@@ -21,6 +21,7 @@ class Game:
         self.tk = Tk()
         self.canvas = tkinter.Canvas(self.tk, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, background=BG_COLOR)
         self.canvas.pack()
+        self.score_text = None
         self.highscore = 0  # 0 is a placeholder for now, it should read the first line in the highscore.txt
         self.current_score = 0
         self.level_manager = LevelManager()
@@ -89,6 +90,7 @@ class Game:
 
                     res = brick.update_state()
                     if res == BrickState.DESTROYED:
+                        self.handle_scoring(brick.type)
                         self.bricks.remove(brick)
                         if brick.type == BrickType.EXPLODING:
                             self.handle_explosion(brick)
@@ -153,8 +155,11 @@ class Game:
             self.canvas.delete(self.paddle.id)
         if self.ball:
             self.canvas.delete(self.ball.id)
+        if self.score_text:
+            self.canvas.delete(self.score_text)
 
         self.canvas.bind("<Motion>", self.update_state)
+        self.score_text = self.canvas.create_text(CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2, text="0", font=("Arial", 24, "bold"), fill="#303055")
 
         self.paddle = Paddle(self.canvas, CANVAS_WIDTH // 2)
         self.ball = Ball(self.canvas, CANVAS_WIDTH // 2)
@@ -269,4 +274,10 @@ class Game:
                             destroyed.add(adj)
 
         for b in destroyed:
+            self.handle_scoring(b.type)
             self.bricks.remove(b)
+    
+    def handle_scoring(self, type):
+        self.current_score += type.value
+        
+        self.canvas.itemconfig(self.score_text, text=str(self.current_score))
