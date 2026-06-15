@@ -8,8 +8,11 @@ from entities.ball import Ball
 from entities.brick import Brick
 from entities.paddle import Paddle
 from levels.level_manager import LevelManager
+from utils.collisions import check_collisions
 from utils.constants import *
 from utils.enums import BrickState, BrickType, GameState
+from utils.screens import draw_game_over_screen, draw_start_screen, draw_transition_screen
+from utils.storage import check_highscore, new_highscore
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -22,7 +25,7 @@ class Game:
         self.canvas = tkinter.Canvas(self.tk, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, background=BG_COLOR)
         self.canvas.pack()
         self.score_text = None
-        self.highscore = self.check_highscore()
+        self.highscore = check_highscore()
         self.current_score = 0
         self.level_manager = LevelManager()
         self.bricks = []
@@ -46,7 +49,7 @@ class Game:
             self.ball.move()
 
             # Collision with paddle
-            if self.check_collisions(self.ball.get_rect(), self.paddle.get_rect()) and self.ball.speed_y > 0:
+            if check_collisions(self.ball.get_rect(), self.paddle.get_rect()) and self.ball.speed_y > 0:
                 ball_rect = self.ball.get_rect()
                 paddle_rect = self.paddle.get_rect()
 
@@ -65,7 +68,7 @@ class Game:
             # Collision with bricks
             any_collision = False
             for brick in self.bricks:
-                if self.check_collisions(self.ball.get_rect(), brick.get_rect()) and not self.ball.in_collision:
+                if check_collisions(self.ball.get_rect(), brick.get_rect()) and not self.ball.in_collision:
                     self.ball.in_collision = True
                     any_collision = True
 
@@ -116,23 +119,9 @@ class Game:
             self.ball.reset()
 
     def start_screen(self):
-        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text="Brick Breaker", font=("Arial", 42, "bold"),
-                                        fill="WHITE")
-        if not self.continuing:
-            play_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Play", font=("Arial", 20), fill="WHITE")
-        else:
-            play_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Continue Playing", font=("Arial", 20), fill="WHITE")
-        highscore_text = self.canvas.create_text(CANVAS_WIDTH // 2, 360, text="High Score", font=("Arial", 20), fill="WHITE")
-        exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Exit", font=("Arial", 20), fill="WHITE")
+        play_label = "Continue Playing" if self.continuing else "Play"
 
-        self.canvas.tag_bind(play_text, "<Button-1>", self.on_play_click)
-        self.canvas.tag_bind(highscore_text, "<Button-1>", self.on_highscore_click)
-        self.canvas.tag_bind(exit_text, "<Button-1>", self.on_exit_click)
-
-        self.start_screen_items.append(title)
-        self.start_screen_items.append(play_text)
-        self.start_screen_items.append(highscore_text)
-        self.start_screen_items.append(exit_text)
+        self.start_screen_items = draw_start_screen(self.canvas, play_label, self.on_play_click, self.on_highscore_click, self.on_exit_click)
 
     def on_play_click(self, event):
         for item in self.start_screen_items:
@@ -168,17 +157,8 @@ class Game:
 
     def transition_screen(self):
         displayed = f"Level {self.level_manager.current_level} completed!"
-        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text=displayed, font=("Arial", 42, "bold"),
-                                        fill="WHITE")
-        continue_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Next Level", font=("Arial", 20), fill="WHITE")
-        save_exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Save and Exit", font=("Arial", 20), fill="WHITE")
-
-        self.canvas.tag_bind(continue_text, "<Button-1>", self.on_next_click)
-        self.canvas.tag_bind(save_exit_text, "<Button-1>", self.on_save_exit_click)
-
-        self.transition_screen_items.append(title)
-        self.transition_screen_items.append(continue_text)
-        self.transition_screen_items.append(save_exit_text)
+        
+        self.transition_screen_items = draw_transition_screen(self.canvas, displayed, self.on_next_click, self.on_save_exit_click)
 
     def on_next_click(self, event):
         for item in self.bricks:
@@ -211,25 +191,16 @@ class Game:
         os.remove("data/save.txt")
 
         self.gameplay_start()
-
+    
     def game_over_screen(self):
         if self.current_score > self.highscore:
             displayed = f"Game Over!\nNew Highscore: {self.current_score}"
-            self.new_highscore()
+            new_highscore(self.current_score)
         else:
             displayed = "Game Over!"
+        
+        self.game_over_screen_items = draw_game_over_screen(self.canvas, displayed, self.on_play_again_click, self.on_exit_click)
 
-        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text=displayed, font=("Arial", 42, "bold"), fill="WHITE")
-        play_again_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Play Again", font=("Arial", 20), fill="WHITE")
-        exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Exit", font=("Arial", 20), fill="WHITE")
-
-        self.canvas.tag_bind(play_again_text, "<Button-1>", self.on_play_again_click)
-        self.canvas.tag_bind(exit_text, "<Button-1>", self.on_exit_click)
-
-        self.game_over_screen_items.append(title)
-        self.game_over_screen_items.append(play_again_text)
-        self.game_over_screen_items.append(exit_text)
-    
     def on_play_again_click(self, event):
         for item in self.bricks:
             self.canvas.delete(item.id)
@@ -242,11 +213,8 @@ class Game:
         self.lives = PLAYER_LIVES
         self.level_manager.current_level = 0
         self.current_score = 0
-        self.highscore = self.check_highscore()
+        self.highscore = check_highscore()
         self.gameplay_start()
-
-    def check_collisions(self, rect1, rect2):
-        return not (rect1[2] < rect2[0] or rect1[0] > rect2[2] or rect1[3] < rect2[1] or rect1[1] > rect2[3])
 
     def load_levels(self):
         response = self.level_manager.load_next_level()
@@ -292,17 +260,3 @@ class Game:
             self.canvas.itemconfig(self.score_text, text="★"+str(self.current_score))
         else:
             self.canvas.itemconfig(self.score_text, text=str(self.current_score))
-
-    def check_highscore(self):
-        try:
-            if os.path.exists("data/highscore.txt"):
-                with open("data/highscore.txt", "r") as f:
-                    return int(f.read())
-            else:
-                return 0
-        except:
-            return 0
-    
-    def new_highscore(self):
-        with open("data/highscore.txt", "w") as f:
-            f.write(str(self.current_score))
