@@ -22,7 +22,7 @@ class Game:
         self.canvas = tkinter.Canvas(self.tk, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, background=BG_COLOR)
         self.canvas.pack()
         self.score_text = None
-        self.highscore = 0  # 0 is a placeholder for now, it should read the first line in the highscore.txt
+        self.highscore = self.check_highscore()
         self.current_score = 0
         self.level_manager = LevelManager()
         self.bricks = []
@@ -159,7 +159,7 @@ class Game:
             self.canvas.delete(self.score_text)
 
         self.canvas.bind("<Motion>", self.update_state)
-        self.score_text = self.canvas.create_text(CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2, text="0", font=("Arial", 24, "bold"), fill="#303055")
+        self.score_text = self.canvas.create_text(CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2, text=str(self.current_score), font=("Arial", 24, "bold"), fill="#303055")
 
         self.paddle = Paddle(self.canvas, CANVAS_WIDTH // 2)
         self.ball = Ball(self.canvas, CANVAS_WIDTH // 2)
@@ -193,7 +193,7 @@ class Game:
 
     def on_save_exit_click(self, event):
         with open("data/save.txt", "w") as f:
-            f.write(str(self.level_manager.current_level))
+            f.write(f"{self.level_manager.current_level} {self.current_score}")
 
         self.tk.quit()
 
@@ -204,15 +204,22 @@ class Game:
 
     def load_save(self):
         with open("data/save.txt", "r") as f:
-            self.level_manager.current_level = int(f.read())
+            items = f.read().split()
+            self.level_manager.current_level = int(items[0])
+            self.current_score = int(items[1])
         
         os.remove("data/save.txt")
 
         self.gameplay_start()
 
     def game_over_screen(self):
-        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text="Game Over!", font=("Arial", 42, "bold"),
-                                        fill="WHITE")
+        if self.current_score > self.highscore:
+            displayed = f"Game Over!\nNew Highscore: {self.current_score}"
+            self.new_highscore()
+        else:
+            displayed = "Game Over!"
+
+        title = self.canvas.create_text(CANVAS_WIDTH // 2, 150, text=displayed, font=("Arial", 42, "bold"), fill="WHITE")
         play_again_text = self.canvas.create_text(CANVAS_WIDTH // 2, 300, text="Play Again", font=("Arial", 20), fill="WHITE")
         exit_text = self.canvas.create_text(CANVAS_WIDTH // 2, 420, text="Exit", font=("Arial", 20), fill="WHITE")
 
@@ -235,6 +242,7 @@ class Game:
         self.lives = PLAYER_LIVES
         self.level_manager.current_level = 0
         self.current_score = 0
+        self.highscore = self.check_highscore()
         self.gameplay_start()
 
     def check_collisions(self, rect1, rect2):
@@ -277,7 +285,24 @@ class Game:
             self.handle_scoring(b.type)
             self.bricks.remove(b)
     
-    def handle_scoring(self, type):
-        self.current_score += type.value
+    def handle_scoring(self, brick_type):
+        self.current_score += brick_type.value
         
-        self.canvas.itemconfig(self.score_text, text=str(self.current_score))
+        if self.current_score > self.highscore:
+            self.canvas.itemconfig(self.score_text, text="★"+str(self.current_score))
+        else:
+            self.canvas.itemconfig(self.score_text, text=str(self.current_score))
+
+    def check_highscore(self):
+        try:
+            if os.path.exists("data/highscore.txt"):
+                with open("data/highscore.txt", "r") as f:
+                    return int(f.read())
+            else:
+                return 0
+        except:
+            return 0
+    
+    def new_highscore(self):
+        with open("data/highscore.txt", "w") as f:
+            f.write(str(self.current_score))
