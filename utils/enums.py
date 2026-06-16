@@ -18,3 +18,10 @@ class GameState(Enum):
     TRANSITION = 2
     GAME_OVER = 3
     START = 4
+
+class PowerUpType(Enum):
+    WIDE_PADDLE = 1
+    HAMMER_BALL = 2
+    EXTRA_LIFE = 3
+    FIREBALL = 4
+    MULTI_BALL = 5

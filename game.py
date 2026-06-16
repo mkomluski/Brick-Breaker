@@ -29,6 +29,7 @@ class Game:
         self.current_score = 0
         self.level_manager = LevelManager()
         self.bricks = []
+        self.powerups = []
         self.game_state = GameState.START
         self.start_screen_items = []
         self.transition_screen_items = []
@@ -68,35 +69,37 @@ class Game:
             # Collision with bricks
             any_collision = False
             for brick in self.bricks:
-                if check_collisions(self.ball.get_rect(), brick.get_rect()) and not self.ball.in_collision:
-                    self.ball.in_collision = True
+                if check_collisions(self.ball.get_rect(), brick.get_rect()):
                     any_collision = True
 
-                    # From which side the ball is colliding with the brick
-                    overlap_ball = self.ball.get_rect()
-                    overlap_brick = brick.get_rect()
-                    ball_center_x = (overlap_ball[0] + overlap_ball[2]) / 2
-                    ball_center_y = (overlap_ball[1] + overlap_ball[3]) / 2
-                    brick_center_x = (overlap_brick[0] + overlap_brick[2]) / 2
-                    brick_center_y = (overlap_brick[1] + overlap_brick[3]) / 2
+                    if not self.ball.in_collision:
+                        self.ball.in_collision = True
 
-                    dx = ball_center_x - brick_center_x
-                    dy = ball_center_y - brick_center_y
+                        # From which side the ball is colliding with the brick
+                        overlap_ball = self.ball.get_rect()
+                        overlap_brick = brick.get_rect()
+                        ball_center_x = (overlap_ball[0] + overlap_ball[2]) / 2
+                        ball_center_y = (overlap_ball[1] + overlap_ball[3]) / 2
+                        brick_center_x = (overlap_brick[0] + overlap_brick[2]) / 2
+                        brick_center_y = (overlap_brick[1] + overlap_brick[3]) / 2
 
-                    half_w = (overlap_brick[2] - overlap_brick[0]) / 2
-                    half_h = (overlap_brick[3] - overlap_brick[1]) / 2
+                        dx = ball_center_x - brick_center_x
+                        dy = ball_center_y - brick_center_y
 
-                    if abs(dx / half_w) > abs(dy / half_h):
-                        self.ball.set_speed(-self.ball.speed_x, self.ball.speed_y)
-                    else:
-                        self.ball.set_speed(self.ball.speed_x, -self.ball.speed_y)
+                        half_w = (overlap_brick[2] - overlap_brick[0]) / 2
+                        half_h = (overlap_brick[3] - overlap_brick[1]) / 2
 
-                    res = brick.update_state()
-                    if res == BrickState.DESTROYED:
-                        self.handle_scoring(brick.type)
-                        self.bricks.remove(brick)
-                        if brick.type == BrickType.EXPLODING:
-                            self.handle_explosion(brick)
+                        if abs(dx / half_w) > abs(dy / half_h):
+                            self.ball.set_speed(-self.ball.speed_x, self.ball.speed_y)
+                        else:
+                            self.ball.set_speed(self.ball.speed_x, -self.ball.speed_y)
+
+                        res = brick.update_state()
+                        if res == BrickState.DESTROYED:
+                            self.handle_scoring(brick.type)
+                            self.bricks.remove(brick)
+                            if brick.type == BrickType.EXPLODING:
+                                self.handle_explosion(brick)
                     break
 
             if not any_collision:
@@ -117,6 +120,10 @@ class Game:
             self.game_over_screen()
         else:
             self.ball.reset()
+
+    def powerup_out_of_bounds(self, powerup):
+        powerup.remove_when_picked_up()
+        self.powerups.remove(powerup)
 
     def start_screen(self):
         play_label = "Continue Playing" if self.continuing else "Play"

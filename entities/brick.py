@@ -47,7 +47,6 @@ class Brick:
             case BrickType.EXPLODING:
                 self.remove_when_destroyed()
                 return BrickState.DESTROYED
-        return None
 
     def remove_when_destroyed(self):
         if BrickType.MULTIHIT == self.type:
