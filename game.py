@@ -1,5 +1,6 @@
 import tkinter
 import os
+import random
 
 from collections import namedtuple, deque
 from tkinter import Tk
@@ -7,10 +8,11 @@ from tkinter import Tk
 from entities.ball import Ball
 from entities.brick import Brick
 from entities.paddle import Paddle
+from entities.powerup import PowerUp
 from levels.level_manager import LevelManager
 from utils.collisions import check_collisions
 from utils.constants import *
-from utils.enums import BrickState, BrickType, GameState
+from utils.enums import BrickState, BrickType, GameState, PowerUpType
 from utils.screens import draw_game_over_screen, draw_start_screen, draw_transition_screen
 from utils.storage import check_highscore, new_highscore
 
@@ -98,18 +100,37 @@ class Game:
                         if res == BrickState.DESTROYED:
                             self.handle_scoring(brick.type)
                             self.bricks.remove(brick)
+                            self.spawn_power_up(brick)
                             if brick.type == BrickType.EXPLODING:
                                 self.handle_explosion(brick)
                     break
 
             if not any_collision:
                 self.ball.in_collision = False
-            
+
             if self.ball.get_rect()[3] > CANVAS_HEIGHT:
                 self.ball_out_of_bounds()
             elif not any(brick.type != BrickType.INDESTRUCTIBLE for brick in self.bricks):
                 self.game_state = GameState.TRANSITION
                 self.transition_screen()
+
+            fell_down = set()
+            picked_up = set()
+
+            for power_up in self.powerups:
+                power_up.move()
+
+                if power_up.get_rect()[3] > CANVAS_HEIGHT:
+                    fell_down.add(power_up)
+                elif check_collisions(power_up.get_rect(), self.paddle.get_rect()):
+                    picked_up.add(power_up)
+            
+            for p in fell_down:
+                self.powerup_out_of_bounds(p)
+
+            for p in picked_up:
+                p.remove_when_picked_up()
+                self.powerups.remove(p)
 
         self.tk.after(20, self.game_loop)
 
@@ -259,6 +280,7 @@ class Game:
         for b in destroyed:
             self.handle_scoring(b.type)
             self.bricks.remove(b)
+            self.spawn_power_up(b)
     
     def handle_scoring(self, brick_type):
         self.current_score += brick_type.value
@@ -267,3 +289,8 @@ class Game:
             self.canvas.itemconfig(self.score_text, text="★"+str(self.current_score))
         else:
             self.canvas.itemconfig(self.score_text, text=str(self.current_score))
+
+    def spawn_power_up(self, brick):
+        if random.random() < POWER_UP_DROP_CHANCE:
+            powerup_type = random.choice(list(PowerUpType))
+            self.powerups.append(PowerUp(self.canvas, brick.position.x + BRICK_WIDTH/2, brick.position.y + BRICK_HEIGHT/2, powerup_type))

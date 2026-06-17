@@ -10,7 +10,7 @@ class PowerUp:
         self.type = power_up_type
         self.radius = POWER_UP_RADIUS
         self.speed = POWER_UP_FALLING_SPEED
-        self.image = tkinter.PhotoImage(file="")
+        self.image = tkinter.PhotoImage(file="assets/images/Hammer.png")
         self.id = canvas.create_image(self.x, self.y, image=self.image)
 
     def move(self):
