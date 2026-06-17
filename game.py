@@ -1,3 +1,4 @@
+import time
 import tkinter
 import os
 import random
@@ -27,6 +28,7 @@ class Game:
         self.canvas = tkinter.Canvas(self.tk, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, background=BG_COLOR)
         self.canvas.pack()
         self.score_text = None
+        self.lives_text = None
         self.highscore = check_highscore()
         self.current_score = 0
         self.level_manager = LevelManager()
@@ -38,6 +40,7 @@ class Game:
         self.game_over_screen_items = []
         self.continuing = os.path.exists("data/save.txt")
         self.lives = PLAYER_LIVES
+        self.wide_paddle_start = None
 
     def run(self):
         self.start_screen()
@@ -103,6 +106,7 @@ class Game:
                             self.spawn_power_up(brick)
                             if brick.type == BrickType.EXPLODING:
                                 self.handle_explosion(brick)
+                            self.ball.in_collision = False
                     break
 
             if not any_collision:
@@ -130,12 +134,17 @@ class Game:
 
             for p in picked_up:
                 p.remove_when_picked_up()
+                self.activate_powerup(p)
                 self.powerups.remove(p)
+        
+        if self.wide_paddle_start is not None and time.time() - self.wide_paddle_start > WIDE_PADDLE_DURATION:
+            self.activate_wide_paddle()
 
         self.tk.after(20, self.game_loop)
 
     def ball_out_of_bounds(self):
         self.lives -= 1
+        self.canvas.itemconfig(self.lives_text, text=f"{self.lives}♡")
         if self.lives == 0:
             self.game_state = GameState.GAME_OVER
             self.game_over_screen()
@@ -174,9 +183,14 @@ class Game:
             self.canvas.delete(self.ball.id)
         if self.score_text:
             self.canvas.delete(self.score_text)
+        if self.lives_text:
+            self.canvas.delete(self.lives_text)
+        
+        self.wide_paddle_start = None
 
         self.canvas.bind("<Motion>", self.update_state)
         self.score_text = self.canvas.create_text(CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2, text=str(self.current_score), font=("Arial", 24, "bold"), fill="#303055")
+        self.lives_text = self.canvas.create_text(CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 - 50, text=f"{str(self.lives)}♡", font=("Arial", 24, "bold"), fill="#303055")
 
         self.paddle = Paddle(self.canvas, CANVAS_WIDTH // 2)
         self.ball = Ball(self.canvas, CANVAS_WIDTH // 2)
@@ -294,3 +308,37 @@ class Game:
         if random.random() < POWER_UP_DROP_CHANCE:
             powerup_type = random.choice(list(PowerUpType))
             self.powerups.append(PowerUp(self.canvas, brick.position.x + BRICK_WIDTH/2, brick.position.y + BRICK_HEIGHT/2, powerup_type))
+
+    def activate_powerup(self, power):
+        match power.type:
+            case PowerUpType.EXTRA_LIFE:
+                self.activate_extra_life()
+            case PowerUpType.WIDE_PADDLE:
+                self.activate_wide_paddle()
+            case PowerUpType.HAMMER_BALL:
+                pass
+            case PowerUpType.MULTI_BALL:
+                pass
+            case PowerUpType.FIREBALL:
+                pass
+
+    def activate_extra_life(self):
+        self.lives += 1
+        self.canvas.itemconfig(self.lives_text, text=f"{self.lives}♡")
+
+    def activate_wide_paddle(self):
+        if self.wide_paddle_start is None:
+            self.wide_paddle_start = time.time()
+            self.paddle.activate_wide()
+        else:
+            self.wide_paddle_start = None
+            self.paddle.activate_wide()
+
+    def activate_hammer_ball(self):
+        pass
+
+    def activate_multi_ball(self):
+        pass
+
+    def activate_fireball(self):
+        pass

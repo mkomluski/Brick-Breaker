@@ -14,5 +14,13 @@ class Paddle:
         self.x = max(0, min(CANVAS_WIDTH - self.width, x))
         self.canvas.coords(self.id, self.x, self.y, self.x + self.width, self.y + self.height)
 
+    def activate_wide(self):
+        if self.width == PADDLE_WIDTH:
+            self.width += WIDE_PADDLE_SIZE
+            self.canvas.coords(self.id, self.x, self.y, self.x + self.width, self.y + self.height)
+        else:
+            self.width = PADDLE_WIDTH
+            self.canvas.coords(self.id, self.x, self.y, self.x + self.width, self.y + self.height)
+
     def get_rect(self):
         return self.x, self.y, self.x + self.width, self.y + self.height
